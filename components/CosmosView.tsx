@@ -83,10 +83,12 @@ export default function CosmosView({
     setDims({ w, h });
 
     const cx = w / 2;
-    const cy = h / 2;
-    const padding = 70;
-    const rx = w / 2 - padding;
-    const ry = h / 2 - padding;
+    const padH = 60;
+    const padTop = 30;
+    const padBottom = 180; // leave room for footer (input + buttons)
+    const rx = w / 2 - padH;
+    const ry = (h - padTop - padBottom) / 2;
+    const cy = padTop + ry; // shift center upward
 
     const newNodes: BookNode[] = books.map((book, i) => {
       const pos = sunflowerPosition(i, books.length, cx, cy, rx, ry);
