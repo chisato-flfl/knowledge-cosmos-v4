@@ -160,7 +160,7 @@ export default function Home() {
 
       {/* Left side — upload buttons, vertically centered */}
       <motion.div
-        className="absolute left-6 top-1/2 -translate-y-1/2 z-20"
+        className="absolute left-6 top-20 z-20"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.6 }}
