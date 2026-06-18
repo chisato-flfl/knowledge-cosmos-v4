@@ -1,37 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
 import { findRelatedBooksMock } from "@/lib/mockData";
 import { Book, FindRelatedResponse } from "@/lib/types";
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 async function findRelatedWithAI(
   worry: string,
   books: Book[]
 ): Promise<FindRelatedResponse> {
+  const client = new Anthropic();
+
   const bookList = books
     .map((b) => `- ${b.title}（キーワード: ${b.keywords.join("、")}）`)
     .join("\n");
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      max_tokens: 1200,
-      messages: [
-        {
-          role: "system",
-          content: `あなたは「知識の宇宙」の案内人です。
+  const response = await client.messages.create({
+    model: "claude-opus-4-7",
+    max_tokens: 1200,
+    system: `あなたは「知識の宇宙」の案内人です。
 ユーザーの悩みと本のつながりを見つけ、答えではなく「問い」を返します。
 答えを出さず、ユーザー自身が内省できる問いを投げかけてください。
 哲学的で、静かで、神秘的なトーンで話してください。`,
-        },
-        {
-          role: "user",
-          content: `ユーザーの悩み・問い: 「${worry}」
+    messages: [
+      {
+        role: "user",
+        content: `ユーザーの悩み・問い: 「${worry}」
 
 ユーザーの本棚:
 ${bookList}
@@ -54,16 +46,14 @@ ${bookList}
 最も関連する本を1〜3冊選んでください。
 relatedBooks[].bookIdは本棚にある本のタイトルと完全一致させてください。
 JSONのみを返してください。`,
-        },
-      ],
-    }),
+      },
+    ],
   });
 
-  if (!response.ok) throw new Error("OpenAI error");
+  const content = response.content[0];
+  if (content.type !== "text") throw new Error("Unexpected response type");
 
-  const data = await response.json();
-  const content = data.choices[0]?.message?.content ?? "{}";
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  const jsonMatch = content.text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("No JSON in response");
 
   return JSON.parse(jsonMatch[0]);
@@ -77,11 +67,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "worry and books required" }, { status: 400 });
     }
 
-    // Use OpenAI if available
-    if (OPENAI_API_KEY) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+
+    if (apiKey) {
       try {
         const result = await findRelatedWithAI(worry, books);
-        // Map bookId (title) back to actual book IDs
         const mapped = {
           ...result,
           relatedBooks: result.relatedBooks.map((rb) => {
@@ -97,7 +87,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Mock mode: keyword-based matching
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     const results = findRelatedBooksMock(worry, books);

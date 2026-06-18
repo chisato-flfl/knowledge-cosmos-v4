@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Book } from "@/lib/types";
+import { MOCK_BOOKS } from "@/lib/mockData";
 
 interface BookUploadProps {
   onBooksExtracted: (books: Book[]) => void;
@@ -178,40 +179,71 @@ export default function BookUpload({ onBooksExtracted }: BookUploadProps) {
             </div>
           </motion.div>
         ) : (
-          <motion.button
-            key="upload-btn"
-            className="glass-card rounded-2xl px-5 py-3 flex items-center gap-3 group"
-            onClick={() => inputRef.current?.click()}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setPhase("dragging");
-            }}
-            onDragLeave={() => setPhase("idle")}
-            onDrop={handleDrop}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+          <motion.div
+            key="idle"
+            className="flex flex-col gap-2"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
           >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(124,58,237,0.4), rgba(99,102,241,0.3))",
-                border: "1px solid rgba(139,92,246,0.3)",
+            <motion.button
+              className="glass-card rounded-2xl px-5 py-3 flex items-center gap-3 group"
+              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setPhase("dragging");
               }}
+              onDragLeave={() => setPhase("idle")}
+              onDrop={handleDrop}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
-              {phase === "dragging" ? "⬇" : "📚"}
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-medium text-slate-200">
-                {phase === "dragging" ? "ドロップして追加" : "本棚を撮影する"}
-              </p>
-              <p className="text-[11px] text-slate-500">
-                画像をアップロード → 宇宙に追加
-              </p>
-            </div>
-          </motion.button>
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(124,58,237,0.4), rgba(99,102,241,0.3))",
+                  border: "1px solid rgba(139,92,246,0.3)",
+                }}
+              >
+                {phase === "dragging" ? "⬇" : "📚"}
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-medium text-slate-200">
+                  {phase === "dragging" ? "ドロップして追加" : "本棚を撮影する"}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  画像をアップロード → 宇宙に追加
+                </p>
+              </div>
+            </motion.button>
+
+            <motion.button
+              className="glass-card rounded-2xl px-5 py-3 flex items-center gap-3 group"
+              onClick={() => onBooksExtracted(MOCK_BOOKS)}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(16,185,129,0.3), rgba(6,182,212,0.2))",
+                  border: "1px solid rgba(52,211,153,0.3)",
+                }}
+              >
+                ✨
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-medium text-emerald-300">
+                  デモで試す
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  26冊のサンプル本棚を表示
+                </p>
+              </div>
+            </motion.button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

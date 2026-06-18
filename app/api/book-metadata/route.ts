@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
 import { MOCK_BOOKS, generateBookFromTitle } from "@/lib/mockData";
 import { Book } from "@/lib/types";
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const BOOK_COLORS = [
   "#7c3aed",
   "#3b82f6",
@@ -17,25 +17,18 @@ const BOOK_COLORS = [
 ];
 
 async function generateMetadataWithAI(title: string, index: number): Promise<Book> {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      max_tokens: 600,
-      messages: [
-        {
-          role: "system",
-          content: `あなたは読書体験を哲学的に深める案内人です。
+  const client = new Anthropic();
+
+  const response = await client.messages.create({
+    model: "claude-opus-4-7",
+    max_tokens: 600,
+    system: `あなたは読書体験を哲学的に深める案内人です。
 本のキーワード、テーマ、問いを生成します。
 「問い」は答えを押しつけず、読者自身が内省できるものにしてください。`,
-        },
-        {
-          role: "user",
-          content: `「${title}」という本について、以下のJSON形式で情報を生成してください:
+    messages: [
+      {
+        role: "user",
+        content: `「${title}」という本について、以下のJSON形式で情報を生成してください:
 {
   "keywords": ["キーワード1", "キーワード2", "キーワード3", "キーワード4", "キーワード5"],
   "themes": ["テーマ1", "テーマ2", "テーマ3"],
@@ -43,16 +36,14 @@ async function generateMetadataWithAI(title: string, index: number): Promise<Boo
 }
 keywordsは本の核心概念を5個、themesは大きなテーマを3個、questionsは読者への内省的な問いを3個。
 JSONのみを返してください。`,
-        },
-      ],
-    }),
+      },
+    ],
   });
 
-  if (!response.ok) throw new Error("OpenAI error");
+  const content = response.content[0];
+  if (content.type !== "text") throw new Error("Unexpected response type");
 
-  const data = await response.json();
-  const content = data.choices[0]?.message?.content ?? "{}";
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  const jsonMatch = content.text.match(/\{[\s\S]*\}/);
   const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 
   return {
@@ -77,9 +68,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "titles array required" }, { status: 400 });
     }
 
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+
     const books: Book[] = await Promise.all(
       titles.map(async (title: string, index: number) => {
-        // Check if we have mock data for this title
         const mockBook = MOCK_BOOKS.find(
           (b) => b.title === title || title.includes(b.title) || b.title.includes(title)
         );
@@ -88,8 +80,7 @@ export async function POST(req: NextRequest) {
           return { ...mockBook, id: `${mockBook.id}-${Date.now()}` };
         }
 
-        // Use OpenAI if available
-        if (OPENAI_API_KEY) {
+        if (apiKey) {
           try {
             return await generateMetadataWithAI(title, index);
           } catch {
