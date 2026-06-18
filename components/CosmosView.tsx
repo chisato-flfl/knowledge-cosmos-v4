@@ -238,6 +238,20 @@ export default function CosmosView({
                 whileTap={{ scale: 0.95 }}
               />
 
+              {/* Title label */}
+              <div
+                className="absolute z-10 pointer-events-none text-center w-max"
+                style={{
+                  top: radius + 6,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                }}
+              >
+                <span className="text-[10px] text-slate-300 drop-shadow-md px-1.5 py-0.5 rounded bg-[#07071a]/60 backdrop-blur-sm border border-white/5">
+                  {node.title.length > 14 ? node.title.slice(0, 14) + "…" : node.title}
+                </span>
+              </div>
+
               {/* Tooltip */}
               <AnimatePresence>
                 {(isHovered || isHighlighted) && (

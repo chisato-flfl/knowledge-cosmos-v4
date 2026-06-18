@@ -16,28 +16,37 @@ export default function BookUpload({ onBooksExtracted }: BookUploadProps) {
   const [extractedTitles, setExtractedTitles] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const processFile = useCallback(
-    async (file: File) => {
-      if (!file.type.startsWith("image/")) return;
+  const processFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const validFiles = Array.from(files).filter(f => f.type.startsWith("image/"));
+      if (validFiles.length === 0) return;
 
-      // Show preview
+      // Show preview for the first image
       const reader = new FileReader();
       reader.onload = (e) => setPreview(e.target?.result as string);
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(validFiles[0]);
 
       setPhase("scanning");
 
       try {
-        // Step 1: Extract titles via OCR
-        const formData = new FormData();
-        formData.append("image", file);
+        let allTitles: string[] = [];
+        for (const file of validFiles) {
+          const formData = new FormData();
+          formData.append("image", file);
 
-        const extractRes = await fetch("/api/extract-books", {
-          method: "POST",
-          body: formData,
-        });
-        const { titles } = await extractRes.json();
-        setExtractedTitles(titles);
+          const extractRes = await fetch("/api/extract-books", {
+            method: "POST",
+            body: formData,
+          });
+          const { titles } = await extractRes.json();
+          allTitles = [...allTitles, ...titles];
+          setExtractedTitles([...allTitles]);
+        }
+
+        if (allTitles.length === 0) {
+          setPhase("idle");
+          return;
+        }
 
         setPhase("generating");
 
@@ -45,7 +54,7 @@ export default function BookUpload({ onBooksExtracted }: BookUploadProps) {
         const metaRes = await fetch("/api/book-metadata", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ titles }),
+          body: JSON.stringify({ titles: allTitles }),
         });
         const { books } = await metaRes.json();
 
@@ -68,19 +77,19 @@ export default function BookUpload({ onBooksExtracted }: BookUploadProps) {
     (e: React.DragEvent) => {
       e.preventDefault();
       setPhase("idle");
-      const file = e.dataTransfer.files[0];
-      if (file) processFile(file);
+      if (e.dataTransfer.files.length > 0) processFiles(e.dataTransfer.files);
     },
-    [processFile]
+    [processFiles]
   );
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) processFile(file);
+      if (e.target.files && e.target.files.length > 0) {
+        processFiles(e.target.files);
+      }
       e.target.value = "";
     },
-    [processFile]
+    [processFiles]
   );
 
   const isProcessing = phase === "scanning" || phase === "generating" || phase === "done";
@@ -91,6 +100,7 @@ export default function BookUpload({ onBooksExtracted }: BookUploadProps) {
         ref={inputRef}
         type="file"
         accept="image/*"
+        multiple
         capture="environment"
         className="hidden"
         onChange={handleChange}
