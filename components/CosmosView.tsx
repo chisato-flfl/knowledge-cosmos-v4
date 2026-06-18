@@ -26,19 +26,19 @@ function sunflowerPosition(
   total: number,
   cx: number,
   cy: number,
-  maxR: number
+  rx: number,
+  ry: number
 ): { x: number; y: number } {
-  if (total === 0) return { x: cx, y: cy };
-  if (total === 1) return { x: cx, y: cy };
+  if (total <= 1) return { x: cx, y: cy };
 
   const goldenAngle = 137.508 * (Math.PI / 180);
   const angle = index * goldenAngle;
-  // Use sqrt for even distribution; min radius so center isn't too crowded
-  const r = maxR * Math.sqrt((index + 1) / total);
+  // Start from 18% to avoid center crowding; fill full elliptical area
+  const t = 0.18 + 0.82 * Math.sqrt((index + 1) / total);
 
   return {
-    x: cx + r * Math.cos(angle),
-    y: cy + r * Math.sin(angle),
+    x: cx + t * rx * Math.cos(angle),
+    y: cy + t * ry * Math.sin(angle),
   };
 }
 
@@ -84,10 +84,12 @@ export default function CosmosView({
 
     const cx = w / 2;
     const cy = h / 2;
-    const maxR = Math.min(w, h) * 0.38;
+    const padding = 70;
+    const rx = w / 2 - padding;
+    const ry = h / 2 - padding;
 
     const newNodes: BookNode[] = books.map((book, i) => {
-      const pos = sunflowerPosition(i, books.length, cx, cy, maxR);
+      const pos = sunflowerPosition(i, books.length, cx, cy, rx, ry);
       return { ...book, cx: pos.x, cy: pos.y };
     });
 
