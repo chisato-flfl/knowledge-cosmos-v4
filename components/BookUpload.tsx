@@ -83,7 +83,7 @@ export default function BookUpload({ onBooksExtracted }: BookUploadProps) {
     [processFile]
   );
 
-  const isProcessing = phase === "scanning" || phase === "generating";
+  const isProcessing = phase === "scanning" || phase === "generating" || phase === "done";
 
   return (
     <div className="relative">
@@ -120,7 +120,7 @@ export default function BookUpload({ onBooksExtracted }: BookUploadProps) {
                 )}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="glass-card rounded-lg px-3 py-1 text-xs text-violet-300">
-                    {phase === "scanning" ? "📡 背表紙を解析中..." : "✨ メタデータ生成中..."}
+                    {phase === "scanning" ? "📡 背表紙を解析中..." : phase === "generating" ? "✨ メタデータ生成中..." : "✨ 完了!"}
                   </div>
                 </div>
               </div>
@@ -163,7 +163,7 @@ export default function BookUpload({ onBooksExtracted }: BookUploadProps) {
                 ))}
               </div>
               <span className="text-xs text-slate-500">
-                {phase === "scanning" ? "OCR解析" : "宇宙に追加中"}
+                {phase === "scanning" ? "OCR解析" : phase === "generating" ? "宇宙に追加中" : "完了"}
               </span>
             </div>
           </motion.div>
