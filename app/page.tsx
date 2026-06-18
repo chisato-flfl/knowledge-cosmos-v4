@@ -114,8 +114,8 @@ export default function Home() {
         </AnimatePresence>
       </motion.header>
 
-      {/* Cosmos canvas */}
-      <div className="absolute inset-0 pt-16 pb-32">
+      {/* Cosmos canvas — right of buttons, above input */}
+      <div className="absolute top-16 bottom-20 left-72 right-0">
         <CosmosView
           books={books}
           highlightedBookIds={highlightedIds}
@@ -124,7 +124,7 @@ export default function Home() {
       </div>
 
       {/* Side panel */}
-      <div className="absolute right-4 top-16 bottom-32 z-30 flex items-center pointer-events-none">
+      <div className="absolute right-4 top-16 bottom-20 z-30 flex items-center pointer-events-none">
         <AnimatePresence>
           {panelOpen && (
             <div className="pointer-events-auto">
@@ -139,33 +139,34 @@ export default function Home() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom controls */}
-      <motion.footer
-        className="absolute bottom-0 left-0 right-0 z-20 px-6 py-5"
+      {/* Gradient fade at bottom */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-40 z-10 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(to top, rgba(7,7,26,0.95) 0%, rgba(7,7,26,0.6) 60%, transparent 100%)",
+        }}
+      />
+
+      {/* Bottom center — worry input */}
+      <motion.div
+        className="absolute bottom-5 left-0 right-0 z-20 flex justify-center px-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        {/* Gradient fade */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-40 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(to top, rgba(7,7,26,0.95) 0%, rgba(7,7,26,0.6) 60%, transparent 100%)",
-          }}
-        />
+        <WorryCometInput books={books} onResult={handleRelatedResult} />
+      </motion.div>
 
-        <div className="relative flex flex-col items-center gap-4">
-          {/* Worry input */}
-          <WorryCometInput
-            books={books}
-            onResult={handleRelatedResult}
-          />
-
-          {/* Upload button */}
-          <BookUpload onBooksExtracted={handleBooksExtracted} />
-        </div>
-      </motion.footer>
+      {/* Left side — upload buttons, vertically centered */}
+      <motion.div
+        className="absolute left-6 top-1/2 -translate-y-1/2 z-20"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.6 }}
+      >
+        <BookUpload onBooksExtracted={handleBooksExtracted} />
+      </motion.div>
 
       {/* Demo hint — shows when empty */}
       <AnimatePresence>
