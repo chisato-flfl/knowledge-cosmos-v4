@@ -102,8 +102,8 @@ body {
 }
 
 .book-star.highlighted {
-  animation: cosmic-pulse 1.5s ease-in-out infinite,
-             float var(--float-duration, 6s) ease-in-out infinite;
+  animation: float var(--float-duration, 6s) ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
 }
 
 .comet-enter {

@@ -137,6 +137,14 @@ export default function CosmosView({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <filter id="glow-filter-strong">
+            <feGaussianBlur stdDeviation="5" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
 
         <AnimatePresence>
@@ -155,18 +163,18 @@ export default function CosmosView({
                 y2={conn.to.cy}
                 stroke={
                   isActive
-                    ? "#a855f7"
+                    ? "#c084fc"
                     : isPartial
-                    ? "#6366f1"
+                    ? "#818cf8"
                     : "rgba(99,102,241,0.15)"
                 }
-                strokeWidth={isActive ? 1.5 : isPartial ? 1 : 0.5}
+                strokeWidth={isActive ? 2.5 : isPartial ? 1 : 0.5}
                 strokeDasharray={isActive ? "none" : "6 4"}
-                filter={isActive ? "url(#glow-filter)" : undefined}
-                opacity={isActive ? 0.9 : isPartial ? 0.5 : 0.3}
+                filter={isActive ? "url(#glow-filter-strong)" : isPartial ? "url(#glow-filter)" : undefined}
+                opacity={isActive ? 1 : isPartial ? 0.5 : 0.3}
                 initial={{ opacity: 0 }}
                 animate={{
-                  opacity: isActive ? 0.9 : isPartial ? 0.5 : 0.3,
+                  opacity: isActive ? 1 : isPartial ? 0.5 : 0.3,
                 }}
                 transition={{ delay: idx * 0.03, duration: 0.5 }}
               />
@@ -201,20 +209,38 @@ export default function CosmosView({
                 damping: 20,
               }}
             >
-              {/* Outer glow ring when highlighted */}
+              {/* Outer glow rings when highlighted */}
               {isHighlighted && (
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    width: radius * 4,
-                    height: radius * 4,
-                    left: -radius * 1.5,
-                    top: -radius * 1.5,
-                    background: `radial-gradient(circle, ${node.color}30 0%, transparent 70%)`,
-                  }}
-                  animate={{ scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
+                <>
+                  {/* Inner pulsing halo */}
+                  <motion.div
+                    className="absolute rounded-full pointer-events-none"
+                    style={{
+                      width: radius * 6,
+                      height: radius * 6,
+                      left: -radius * 2,
+                      top: -radius * 2,
+                      background: `radial-gradient(circle, ${node.color}50 0%, ${node.color}20 45%, transparent 70%)`,
+                    }}
+                    initial={{ scale: 0.4, opacity: 0 }}
+                    animate={{ scale: [0.8, 1.3, 0.8], opacity: [0.5, 0.9, 0.5] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  {/* Outer diffuse corona */}
+                  <motion.div
+                    className="absolute rounded-full pointer-events-none"
+                    style={{
+                      width: radius * 12,
+                      height: radius * 12,
+                      left: -radius * 5,
+                      top: -radius * 5,
+                      background: `radial-gradient(circle, ${node.color}25 0%, ${node.color}08 50%, transparent 70%)`,
+                    }}
+                    initial={{ scale: 0.3, opacity: 0 }}
+                    animate={{ scale: [1, 1.25, 1], opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+                  />
+                </>
               )}
 
               {/* Planet body */}
@@ -226,14 +252,30 @@ export default function CosmosView({
                   {
                     width: radius * 2,
                     height: radius * 2,
-                    background: `radial-gradient(circle at 35% 35%, ${node.color}ff, ${node.color}88)`,
-                    boxShadow: isHighlighted
-                      ? `0 0 ${radius * 2}px ${radius}px ${node.color}60,
-                         0 0 ${radius * 4}px ${radius * 2}px ${node.color}30`
-                      : `0 0 ${radius}px ${radius / 2}px ${node.color}40`,
+                    background: isHighlighted
+                      ? `radial-gradient(circle at 35% 35%, ${node.color}ff, ${node.color}cc)`
+                      : `radial-gradient(circle at 35% 35%, ${node.color}ff, ${node.color}88)`,
                     "--float-duration": `${5 + idx * 0.7}s`,
                     "--float-delay": `${idx * 0.4}s`,
                   } as React.CSSProperties
+                }
+                animate={
+                  isHighlighted
+                    ? {
+                        boxShadow: [
+                          `0 0 ${radius * 2}px ${radius}px ${node.color}70, 0 0 ${radius * 5}px ${radius * 2.5}px ${node.color}35`,
+                          `0 0 ${radius * 5}px ${radius * 2.5}px ${node.color}aa, 0 0 ${radius * 10}px ${radius * 5}px ${node.color}55, 0 0 ${radius * 16}px ${radius * 8}px ${node.color}20`,
+                          `0 0 ${radius * 2}px ${radius}px ${node.color}70, 0 0 ${radius * 5}px ${radius * 2.5}px ${node.color}35`,
+                        ],
+                      }
+                    : {
+                        boxShadow: `0 0 ${radius}px ${radius / 2}px ${node.color}40`,
+                      }
+                }
+                transition={
+                  isHighlighted
+                    ? { boxShadow: { duration: 1.8, repeat: Infinity, ease: "easeInOut" } }
+                    : { duration: 0.6 }
                 }
                 onClick={() => onBookClick(node)}
                 onMouseEnter={() => setHoveredId(node.id)}
@@ -251,7 +293,18 @@ export default function CosmosView({
                   transform: "translateX(-50%)",
                 }}
               >
-                <span className="text-[10px] text-slate-300 drop-shadow-md px-1.5 py-0.5 rounded bg-[#07071a]/60 backdrop-blur-sm border border-white/5">
+                <span
+                  className={`text-[10px] drop-shadow-md px-1.5 py-0.5 rounded backdrop-blur-sm transition-all duration-500 ${
+                    isHighlighted
+                      ? "text-white font-medium bg-[#07071a]/80 border border-violet-300/50"
+                      : "text-slate-300 bg-[#07071a]/60 border border-white/5"
+                  }`}
+                  style={
+                    isHighlighted
+                      ? { textShadow: `0 0 8px ${node.color}cc`, boxShadow: `0 0 6px ${node.color}30` }
+                      : undefined
+                  }
+                >
                   {node.title.length > 14 ? node.title.slice(0, 14) + "…" : node.title}
                 </span>
               </div>
