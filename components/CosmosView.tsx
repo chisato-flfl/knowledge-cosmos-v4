@@ -90,14 +90,28 @@ export default function CosmosView({
     const cx = w / 2;
     const cy = padTop + ry;
 
-    const newNodes: BookNode[] = books.map((book, i) => {
+    const baseNodes: BookNode[] = books.map((book, i) => {
       const pos = sunflowerPosition(i, books.length, cx, cy, rx, ry);
       return { ...book, cx: pos.x, cy: pos.y };
     });
 
-    setNodes(newNodes);
-    setConnections(buildConnections(newNodes));
-  }, [books]);
+    if (highlightedBookIds.size > 0) {
+      const highlighted = baseNodes.filter((n) => highlightedBookIds.has(n.id));
+      const others = baseNodes.filter((n) => !highlightedBookIds.has(n.id));
+      const clusterR = highlighted.length <= 1 ? 0 : 65 + highlighted.length * 20;
+      const clusterNodes: BookNode[] = highlighted.map((node, i) => ({
+        ...node,
+        cx: cx + clusterR * Math.cos((2 * Math.PI * i) / highlighted.length - Math.PI / 2),
+        cy: cy + clusterR * Math.sin((2 * Math.PI * i) / highlighted.length - Math.PI / 2),
+      }));
+      const allNodes = [...clusterNodes, ...others];
+      setNodes(allNodes);
+      setConnections(buildConnections(allNodes));
+    } else {
+      setNodes(baseNodes);
+      setConnections(buildConnections(baseNodes));
+    }
+  }, [books, highlightedBookIds]);
 
   useEffect(() => {
     recalculate();
@@ -194,19 +208,15 @@ export default function CosmosView({
             <motion.div
               key={node.id}
               className="absolute"
-              style={{
-                left: node.cx,
-                top: node.cy,
-                transform: "translate(-50%, -50%)",
-              }}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              style={{ left: 0, top: 0, transform: "translate(-50%, -50%)" }}
+              initial={{ scale: 0, opacity: 0, x: node.cx, y: node.cy }}
+              animate={{ scale: 1, opacity: 1, x: node.cx, y: node.cy }}
               exit={{ scale: 0, opacity: 0 }}
               transition={{
-                delay: idx * 0.08,
-                type: "spring",
-                stiffness: 260,
-                damping: 20,
+                scale: { delay: idx * 0.08, type: "spring", stiffness: 260, damping: 20 },
+                opacity: { delay: idx * 0.08, duration: 0.4 },
+                x: { type: "spring", stiffness: 180, damping: 28 },
+                y: { type: "spring", stiffness: 180, damping: 28 },
               }}
             >
               {/* Outer glow rings when highlighted */}
