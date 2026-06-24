@@ -2,12 +2,15 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Book, RelatedBook } from "@/lib/types";
+import CosmicQuestionsPanel from "@/components/CosmicQuestionsPanel";
 
 interface RelatedBookPanelProps {
   relatedBooks: RelatedBook[];
   allBooks: Book[];
   onClose: () => void;
   selectedBook?: Book | null;
+  cosmicQuestions?: string[];
+  isLoadingQuestions?: boolean;
 }
 
 export default function RelatedBookPanel({
@@ -15,6 +18,8 @@ export default function RelatedBookPanel({
   allBooks,
   onClose,
   selectedBook,
+  cosmicQuestions = [],
+  isLoadingQuestions = false,
 }: RelatedBookPanelProps) {
   const getBook = (id: string) => allBooks.find((b) => b.id === id);
 
@@ -44,7 +49,11 @@ export default function RelatedBookPanel({
         <div className="flex items-center gap-2">
           <span className="text-violet-400">✦</span>
           <span className="text-sm font-medium text-slate-200">
-            {relatedBooks.length > 0 ? "共鳴した本" : selectedBook?.title ?? "本の詳細"}
+            {relatedBooks.length > 0
+              ? cosmicQuestions.length > 0 || isLoadingQuestions
+                ? "問いの宇宙"
+                : "共鳴した本"
+              : selectedBook?.title ?? "本の詳細"}
           </span>
         </div>
         <button
@@ -145,14 +154,34 @@ export default function RelatedBookPanel({
           })}
         </div>
 
+        {/* Cosmic questions section */}
+        <AnimatePresence>
+          {(cosmicQuestions.length > 0 || isLoadingQuestions) && (
+            <motion.div
+              className="px-5 pb-4"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <CosmicQuestionsPanel
+                questions={cosmicQuestions}
+                isLoading={isLoadingQuestions}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Footer message */}
-        <div className="px-5 py-4 border-t border-white/5">
-          <p className="text-[11px] text-slate-600 text-center leading-relaxed">
-            AIは答えを出しません。
-            <br />
-            問いの中に、あなたの答えがあります。
-          </p>
-        </div>
+        {cosmicQuestions.length === 0 && !isLoadingQuestions && (
+          <div className="px-5 py-4 border-t border-white/5">
+            <p className="text-[11px] text-slate-600 text-center leading-relaxed">
+              AIは答えを出しません。
+              <br />
+              問いの中に、あなたの答えがあります。
+            </p>
+          </div>
+        )}
       </div>
     </motion.div>
   );

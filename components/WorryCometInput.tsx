@@ -6,7 +6,7 @@ import { Book, FindRelatedResponse } from "@/lib/types";
 
 interface WorryCometInputProps {
   books: Book[];
-  onResult: (result: FindRelatedResponse) => void;
+  onResult: (result: FindRelatedResponse, worry: string) => void;
   disabled?: boolean;
 }
 
@@ -38,7 +38,7 @@ export default function WorryCometInput({
       setCosmicQuery(data.cosmicQuery);
 
       await new Promise((r) => setTimeout(r, 600));
-      onResult(data);
+      onResult(data, worry.trim());
     } catch (err) {
       console.error(err);
     } finally {
@@ -49,7 +49,7 @@ export default function WorryCometInput({
   const handleClear = () => {
     setWorry("");
     setCosmicQuery(null);
-    onResult({ relatedBooks: [], cosmicQuery: "" });
+    onResult({ relatedBooks: [], cosmicQuery: "" }, "");
   };
 
   return (

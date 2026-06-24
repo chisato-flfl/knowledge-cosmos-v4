@@ -22,3 +22,7 @@ export interface FindRelatedResponse {
   relatedBooks: RelatedBook[];
   cosmicQuery: string;
 }
+
+export interface QuestionRecommendation {
+  questions: string[];
+}

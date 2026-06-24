@@ -15,6 +15,8 @@ export default function Home() {
   const [relatedBooks, setRelatedBooks] = useState<RelatedBook[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [cosmicQuestions, setCosmicQuestions] = useState<string[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
 
   const handleBooksExtracted = useCallback((newBooks: Book[]) => {
     setBooks((prev) => {
@@ -25,16 +27,37 @@ export default function Home() {
     });
   }, []);
 
-  const handleRelatedResult = useCallback((result: FindRelatedResponse) => {
-    const ids = new Set(result.relatedBooks.map((rb) => rb.bookId));
-    setHighlightedIds(ids);
-    setRelatedBooks(result.relatedBooks);
-    setSelectedBook(null);
+  const handleRelatedResult = useCallback(
+    (result: FindRelatedResponse, worry: string) => {
+      const ids = new Set(result.relatedBooks.map((rb) => rb.bookId));
+      setHighlightedIds(ids);
+      setRelatedBooks(result.relatedBooks);
+      setSelectedBook(null);
+      setCosmicQuestions([]);
 
-    if (result.relatedBooks.length > 0) {
-      setPanelOpen(true);
-    }
-  }, []);
+      if (result.relatedBooks.length > 0) {
+        setPanelOpen(true);
+
+        if (worry) {
+          setIsLoadingQuestions(true);
+          fetch("/api/recommend-questions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              worry,
+              books,
+              relatedBooks: result.relatedBooks,
+            }),
+          })
+            .then((res) => res.json())
+            .then((data) => setCosmicQuestions(data.questions ?? []))
+            .catch(console.error)
+            .finally(() => setIsLoadingQuestions(false));
+        }
+      }
+    },
+    [books]
+  );
 
   const handleBookClick = useCallback(
     (book: Book) => {
@@ -62,6 +85,8 @@ export default function Home() {
     setSelectedBook(null);
     setHighlightedIds(new Set());
     setRelatedBooks([]);
+    setCosmicQuestions([]);
+    setIsLoadingQuestions(false);
   }, []);
 
   const bookCount = books.length;
@@ -133,6 +158,8 @@ export default function Home() {
                 allBooks={books}
                 onClose={handleClose}
                 selectedBook={selectedBook}
+                cosmicQuestions={cosmicQuestions}
+                isLoadingQuestions={isLoadingQuestions}
               />
             </div>
           )}
